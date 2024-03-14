@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:first_app/blank_pixel.dart';
 import 'package:first_app/food_pixel.dart';
 import 'package:first_app/snake_pixel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -36,6 +38,27 @@ class _HomePageState extends State<HomePage> {
 
   //food position
   int foodPosition = 55;
+
+  //highscore list
+  List<String> highscore_DocIds = [];
+  late final Future? letsGetDocIds;
+
+  @override
+  void initState() {
+    letsGetDocIds = getDocId();
+    super.initState();
+  }
+
+  Future getDocId() async {
+    await FirebaseFirestore.instance
+        .collection("Highscores")
+        .orderBy("score", descending: true)
+        .limit(10)
+        .get()
+        .then((value) => value.docs.forEach((element) {
+              highscore_DocIds.add(element.reference.id);
+            }));
+  }
 
   //Start Game
   void startGame() {
@@ -85,7 +108,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   void submitScore() {
+    //get access to the collection
+    var database = FirebaseFirestore.instance;
+
     //add data to firebase
+    database.collection('highscores').add({
+      "name": _nameController.text,
+      "score": currentScore,
+    });
   }
 
   void newGame() {
@@ -205,7 +235,18 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   //highscore, top 5 or 10
-                  Text('Highscore')
+                  Expanded(
+                    child: FutureBuilder(
+                      future: letsGetDocIds,
+                      builder: (context, snapshot) {
+                        return ListView.builder(
+                            itemCount: highscore_DocIds.length,
+                            itemBuilder: ((context, index) {
+                              return Text(highscore_DocIds[index]);
+                            }));
+                      },
+                    ),
+                  )
                 ],
               ),
             ),
