@@ -20,7 +20,10 @@ class _HomePageState extends State<HomePage> {
   int rowSize = 10;
   int totalNumberOfSquares = 100;
 
+  //game settings
   bool gameHasStarted = false;
+
+  final _nameController = TextEditingController();
 
   //user score
   int currentScore = 0;
@@ -57,6 +60,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Text('Your Current Score is: ' + currentScore.toString()),
                     TextField(
+                      controller: _nameController,
                       decoration: InputDecoration(hintText: 'Enter Your Name:'),
                     ),
                   ],
@@ -175,86 +179,91 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    //get the screen width
+    double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
-        children: [
-          //High Scores
+      body: SizedBox(
+        width: screenWidth > 428 ? 428 : screenWidth,
+        child: Column(
+          children: [
+            //High Scores
 
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                //user current score
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Current Score:'),
-                    Text(
-                      currentScore.toString(),
-                      style: TextStyle(fontSize: 36),
-                    ),
-                  ],
-                ),
-                //highscore, top 5 or 10
-                Text('Highscore')
-              ],
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  //user current score
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Current Score:'),
+                      Text(
+                        currentScore.toString(),
+                        style: TextStyle(fontSize: 36),
+                      ),
+                    ],
+                  ),
+                  //highscore, top 5 or 10
+                  Text('Highscore')
+                ],
+              ),
             ),
-          ),
 
-          //Game Grid
+            //Game Grid
 
-          Expanded(
-            flex: 3,
-            child: GestureDetector(
-              onVerticalDragUpdate: (details) {
-                if (details.delta.dy > 0 &&
-                    currentDirection != snake_Direction.UP) {
-                  currentDirection = snake_Direction.DOWN;
-                } else if (details.delta.dy < 0 &&
-                    currentDirection != snake_Direction.DOWN) {
-                  currentDirection = snake_Direction.UP;
-                }
-              },
-              onHorizontalDragUpdate: (details) {
-                if (details.delta.dx > 0 &&
-                    currentDirection != snake_Direction.LEFT) {
-                  currentDirection = snake_Direction.RIGHT;
-                } else if (details.delta.dx < 0 &&
-                    currentDirection != snake_Direction.RIGHT) {
-                  currentDirection = snake_Direction.LEFT;
-                }
-              },
-              child: GridView.builder(
-                  itemCount: totalNumberOfSquares,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: rowSize),
-                  itemBuilder: (context, index) {
-                    if (snakePosition.contains(index)) {
-                      return const SnakePixel();
-                    } else if (foodPosition == index) {
-                      return const FoodPixel();
-                    } else {
-                      return const BlankPixel();
-                    }
-                  }),
+            Expanded(
+              flex: 3,
+              child: GestureDetector(
+                onVerticalDragUpdate: (details) {
+                  if (details.delta.dy > 0 &&
+                      currentDirection != snake_Direction.UP) {
+                    currentDirection = snake_Direction.DOWN;
+                  } else if (details.delta.dy < 0 &&
+                      currentDirection != snake_Direction.DOWN) {
+                    currentDirection = snake_Direction.UP;
+                  }
+                },
+                onHorizontalDragUpdate: (details) {
+                  if (details.delta.dx > 0 &&
+                      currentDirection != snake_Direction.LEFT) {
+                    currentDirection = snake_Direction.RIGHT;
+                  } else if (details.delta.dx < 0 &&
+                      currentDirection != snake_Direction.RIGHT) {
+                    currentDirection = snake_Direction.LEFT;
+                  }
+                },
+                child: GridView.builder(
+                    itemCount: totalNumberOfSquares,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: rowSize),
+                    itemBuilder: (context, index) {
+                      if (snakePosition.contains(index)) {
+                        return const SnakePixel();
+                      } else if (foodPosition == index) {
+                        return const FoodPixel();
+                      } else {
+                        return const BlankPixel();
+                      }
+                    }),
+              ),
             ),
-          ),
 
-          // Play Button
-          Expanded(
-            child: Container(
-              child: Center(
-                child: MaterialButton(
-                  child: Text('PLAY'),
-                  color: gameHasStarted ? Colors.grey : Colors.pink,
-                  onPressed: gameHasStarted ? () {} : startGame,
+            // Play Button
+            Expanded(
+              child: Container(
+                child: Center(
+                  child: MaterialButton(
+                    child: Text('PLAY'),
+                    color: gameHasStarted ? Colors.grey : Colors.pink,
+                    onPressed: gameHasStarted ? () {} : startGame,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
