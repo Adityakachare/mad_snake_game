@@ -20,6 +20,8 @@ class _HomePageState extends State<HomePage> {
   int rowSize = 10;
   int totalNumberOfSquares = 100;
 
+  bool gameHasStarted = false;
+
   //user score
   int currentScore = 0;
 
@@ -34,6 +36,7 @@ class _HomePageState extends State<HomePage> {
 
   //Start Game
   void startGame() {
+    gameHasStarted = true;
     Timer.periodic(const Duration(milliseconds: 150), (timer) {
       setState(() {
         //keep the snake moving
@@ -46,16 +49,48 @@ class _HomePageState extends State<HomePage> {
           //display a message to the user
           showDialog(
             context: context,
+            barrierDismissible: false,
             builder: (context) {
               return AlertDialog(
                 title: Text('GAME OVER'),
-                content:
+                content: Column(
+                  children: [
                     Text('Your Current Score is: ' + currentScore.toString()),
+                    TextField(
+                      decoration: InputDecoration(hintText: 'Enter Your Name:'),
+                    ),
+                  ],
+                ),
+                actions: [
+                  MaterialButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      submitScore();
+                      newGame();
+                    },
+                    child: Text('Submit'),
+                    color: Colors.pink,
+                  )
+                ],
               );
             },
           );
         }
       });
+    });
+  }
+
+  void submitScore() {
+    //add data to firebase
+  }
+
+  void newGame() {
+    setState(() {
+      snakePosition = [0, 1, 2];
+      foodPosition == 55;
+      currentDirection = snake_Direction.RIGHT;
+      gameHasStarted = false;
+      currentScore = 0;
     });
   }
 
@@ -213,8 +248,8 @@ class _HomePageState extends State<HomePage> {
               child: Center(
                 child: MaterialButton(
                   child: Text('PLAY'),
-                  color: Colors.pink,
-                  onPressed: startGame,
+                  color: gameHasStarted ? Colors.grey : Colors.pink,
+                  onPressed: gameHasStarted ? () {} : startGame,
                 ),
               ),
             ),
