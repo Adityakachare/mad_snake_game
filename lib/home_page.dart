@@ -4,8 +4,11 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:first_app/blank_pixel.dart';
 import 'package:first_app/food_pixel.dart';
+import 'package:first_app/highscore_tile.dart';
 import 'package:first_app/snake_pixel.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 class HomePage extends StatefulWidget {
@@ -51,7 +54,7 @@ class _HomePageState extends State<HomePage> {
 
   Future getDocId() async {
     await FirebaseFirestore.instance
-        .collection("Highscores")
+        .collection("highscores")
         .orderBy("score", descending: true)
         .limit(10)
         .get()
@@ -118,7 +121,9 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void newGame() {
+  Future newGame() async {
+    highscore_DocIds = [];
+    await getDocId();
     setState(() {
       snakePosition = [0, 1, 2];
       foodPosition == 55;
@@ -213,97 +218,122 @@ class _HomePageState extends State<HomePage> {
     double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.black,
-      body: SizedBox(
-        width: screenWidth > 428 ? 428 : screenWidth,
-        child: Column(
-          children: [
-            //High Scores
+      body: RawKeyboardListener(
+        focusNode: FocusNode(),
+        autofocus: true,
+        onKey: (event) {
+          if (event.isKeyPressed(LogicalKeyboardKey.arrowDown) &&
+              currentDirection != snake_Direction.UP) {
+            currentDirection = snake_Direction.DOWN;
+          } else if (event.isKeyPressed(LogicalKeyboardKey.arrowUp) &&
+              currentDirection != snake_Direction.DOWN) {
+            currentDirection = snake_Direction.UP;
+          } else if (event.isKeyPressed(LogicalKeyboardKey.arrowLeft) &&
+              currentDirection != snake_Direction.RIGHT) {
+            currentDirection = snake_Direction.LEFT;
+          } else if (event.isKeyPressed(LogicalKeyboardKey.arrowRight) &&
+              currentDirection != snake_Direction.LEFT) {
+            currentDirection = snake_Direction.RIGHT;
+          }
+        },
+        child: SizedBox(
+          width: screenWidth > 428 ? 428 : screenWidth,
+          child: Column(
+            children: [
+              //High Scores
 
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  //user current score
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Current Score:'),
-                      Text(
-                        currentScore.toString(),
-                        style: TextStyle(fontSize: 36),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    //user current score
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Current Score'),
+                          Text(
+                            currentScore.toString(),
+                            style: TextStyle(fontSize: 36),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  //highscore, top 5 or 10
-                  Expanded(
-                    child: FutureBuilder(
-                      future: letsGetDocIds,
-                      builder: (context, snapshot) {
-                        return ListView.builder(
-                            itemCount: highscore_DocIds.length,
-                            itemBuilder: ((context, index) {
-                              return Text(highscore_DocIds[index]);
-                            }));
-                      },
                     ),
-                  )
-                ],
+                    //highscore, top 5 or 10
+                    Expanded(
+                      child: gameHasStarted
+                          ? Container()
+                          : FutureBuilder(
+                              future: letsGetDocIds,
+                              builder: (context, snapshot) {
+                                return ListView.builder(
+                                  itemCount: highscore_DocIds.length,
+                                  itemBuilder: ((context, index) {
+                                    return HighscoreTile(
+                                        documentId: highscore_DocIds[index]);
+                                  }),
+                                );
+                              },
+                            ),
+                    )
+                  ],
+                ),
               ),
-            ),
 
-            //Game Grid
+              //Game Grid
 
-            Expanded(
-              flex: 3,
-              child: GestureDetector(
-                onVerticalDragUpdate: (details) {
-                  if (details.delta.dy > 0 &&
-                      currentDirection != snake_Direction.UP) {
-                    currentDirection = snake_Direction.DOWN;
-                  } else if (details.delta.dy < 0 &&
-                      currentDirection != snake_Direction.DOWN) {
-                    currentDirection = snake_Direction.UP;
-                  }
-                },
-                onHorizontalDragUpdate: (details) {
-                  if (details.delta.dx > 0 &&
-                      currentDirection != snake_Direction.LEFT) {
-                    currentDirection = snake_Direction.RIGHT;
-                  } else if (details.delta.dx < 0 &&
-                      currentDirection != snake_Direction.RIGHT) {
-                    currentDirection = snake_Direction.LEFT;
-                  }
-                },
-                child: GridView.builder(
-                    itemCount: totalNumberOfSquares,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: rowSize),
-                    itemBuilder: (context, index) {
-                      if (snakePosition.contains(index)) {
-                        return const SnakePixel();
-                      } else if (foodPosition == index) {
-                        return const FoodPixel();
-                      } else {
-                        return const BlankPixel();
-                      }
-                    }),
+              Expanded(
+                flex: 3,
+                child: GestureDetector(
+                  onVerticalDragUpdate: (details) {
+                    if (details.delta.dy > 0 &&
+                        currentDirection != snake_Direction.UP) {
+                      currentDirection = snake_Direction.DOWN;
+                    } else if (details.delta.dy < 0 &&
+                        currentDirection != snake_Direction.DOWN) {
+                      currentDirection = snake_Direction.UP;
+                    }
+                  },
+                  onHorizontalDragUpdate: (details) {
+                    if (details.delta.dx > 0 &&
+                        currentDirection != snake_Direction.LEFT) {
+                      currentDirection = snake_Direction.RIGHT;
+                    } else if (details.delta.dx < 0 &&
+                        currentDirection != snake_Direction.RIGHT) {
+                      currentDirection = snake_Direction.LEFT;
+                    }
+                  },
+                  child: GridView.builder(
+                      itemCount: totalNumberOfSquares,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: rowSize),
+                      itemBuilder: (context, index) {
+                        if (snakePosition.contains(index)) {
+                          return const SnakePixel();
+                        } else if (foodPosition == index) {
+                          return const FoodPixel();
+                        } else {
+                          return const BlankPixel();
+                        }
+                      }),
+                ),
               ),
-            ),
 
-            // Play Button
-            Expanded(
-              child: Container(
-                child: Center(
-                  child: MaterialButton(
-                    child: Text('PLAY'),
-                    color: gameHasStarted ? Colors.grey : Colors.pink,
-                    onPressed: gameHasStarted ? () {} : startGame,
+              // Play Button
+              Expanded(
+                child: Container(
+                  child: Center(
+                    child: MaterialButton(
+                      child: Text('PLAY'),
+                      color: gameHasStarted ? Colors.grey : Colors.pink,
+                      onPressed: gameHasStarted ? () {} : startGame,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
