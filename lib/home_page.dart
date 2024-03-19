@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
     await FirebaseFirestore.instance
         .collection("highscores")
         .orderBy("score", descending: true)
-        .limit(10)
+        .limit(5)
         .get()
         .then((value) => value.docs.forEach((element) {
               highscore_DocIds.add(element.reference.id);
@@ -241,7 +241,6 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               //High Scores
-
               Expanded(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -251,11 +250,13 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Current Score'),
-                          Text(
-                            currentScore.toString(),
-                            style: TextStyle(fontSize: 36),
-                          ),
+                          if (gameHasStarted) Text('Current Score'),
+                          if (gameHasStarted)
+                            Text(
+                              currentScore.toString(),
+                              style: TextStyle(fontSize: 36),
+                              textAlign: TextAlign.center,
+                            ),
                         ],
                       ),
                     ),
@@ -266,12 +267,27 @@ class _HomePageState extends State<HomePage> {
                           : FutureBuilder(
                               future: letsGetDocIds,
                               builder: (context, snapshot) {
-                                return ListView.builder(
-                                  itemCount: highscore_DocIds.length,
-                                  itemBuilder: ((context, index) {
-                                    return HighscoreTile(
-                                        documentId: highscore_DocIds[index]);
-                                  }),
+                                return Column(
+                                  children: [
+                                    Text('Highscores',
+                                        style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold)),
+                                    SizedBox(
+                                        height:
+                                            10), // Adjust the spacing as needed
+                                    Expanded(
+                                      child: ListView.builder(
+                                        itemCount: highscore_DocIds.length,
+                                        itemBuilder: ((context, index) {
+                                          return HighscoreTile(
+                                            documentId: highscore_DocIds[index],
+                                            position: index + 1,
+                                          );
+                                        }),
+                                      ),
+                                    ),
+                                  ],
                                 );
                               },
                             ),
